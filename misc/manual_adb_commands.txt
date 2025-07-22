@@ -1,0 +1,83 @@
+# Quick ADB Commands for Android Debloating
+# Use these commands manually if you prefer not to use the main script
+
+# === DEVICE CONNECTION ===
+# Check connected devices
+adb devices
+
+# Get device info
+adb shell getprop ro.product.model
+adb shell getprop ro.build.version.release
+
+# === PACKAGE MANAGEMENT ===
+# List all packages
+adb shell pm list packages
+
+# List only system packages
+adb shell pm list packages -s
+
+# List only third-party packages
+adb shell pm list packages -3
+
+# Search for specific package
+adb shell pm list packages | findstr "facebook"
+
+# === UNINSTALL/DISABLE COMMANDS ===
+# Uninstall for current user (safer, can be reinstalled)
+adb shell pm uninstall --user 0 PACKAGE_NAME
+
+# Disable package (can be re-enabled)
+adb shell pm disable-user --user 0 PACKAGE_NAME
+
+# Re-enable disabled package
+adb shell pm enable PACKAGE_NAME
+
+# === APK INSTALLATION ===
+# Install APK
+adb install path\to\app.apk
+
+# Install APK with replacement
+adb install -r path\to\app.apk
+
+# Install multiple APKs
+for %i in (apks\*.apk) do adb install -r "%i"
+
+# === COMMON BLOATWARE PACKAGES ===
+# Facebook suite
+adb shell pm uninstall --user 0 com.facebook.katana
+adb shell pm uninstall --user 0 com.facebook.system
+adb shell pm uninstall --user 0 com.instagram.android
+
+# Google apps (be careful - some are system critical)
+adb shell pm uninstall --user 0 com.google.android.youtube
+adb shell pm uninstall --user 0 com.google.android.music
+adb shell pm uninstall --user 0 com.google.android.apps.photos
+
+# Samsung bloatware
+adb shell pm uninstall --user 0 com.samsung.android.bixby.agent
+adb shell pm uninstall --user 0 com.samsung.android.app.spage
+adb shell pm uninstall --user 0 com.samsung.android.spay
+
+# === BACKUP & RESTORE ===
+# Backup APK before uninstalling
+adb shell pm path PACKAGE_NAME
+adb pull /system/app/AppName/AppName.apk backup\
+
+# === USEFUL CHECKS ===
+# Check if package exists
+adb shell pm list packages | findstr "PACKAGE_NAME"
+
+# Get package info
+adb shell dumpsys package PACKAGE_NAME
+
+# Check running services
+adb shell dumpsys activity services
+
+# === DANGEROUS - DON'T REMOVE ===
+# These are critical system packages - NEVER uninstall:
+# com.android.systemui
+# com.android.settings  
+# com.android.phone
+# com.google.android.gms
+# com.android.vending
+# com.android.launcher3

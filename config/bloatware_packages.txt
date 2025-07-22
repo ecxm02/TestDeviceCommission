@@ -1,0 +1,215 @@
+# Android Bloatware Removal List
+# Lines starting with # are comments
+# Add one package name per line
+# Customize this list based on your device and preferences
+
+# === GOOGLE APPS ===
+# Remove these if you don't use Google services or want privacy
+com.google.android.apps.books
+com.google.android.apps.magazines
+com.google.android.apps.movies
+com.google.android.apps.photos
+com.google.android.apps.plus
+com.google.android.apps.docs
+com.google.android.apps.maps
+com.google.android.music
+com.google.android.videos
+com.google.android.youtube
+com.google.android.talk
+com.google.android.apps.tachyon
+com.google.android.gm
+com.google.android.apps.messaging
+com.google.android.contacts
+com.google.android.calendar
+com.google.android.keep
+com.google.android.apps.translate
+com.google.android.apps.fitness
+com.google.android.googlequicksearchbox
+
+# === SAMSUNG BLOATWARE ===
+# Only relevant for Samsung devices
+com.samsung.android.bixby.agent
+com.samsung.android.app.spage
+com.samsung.android.bixby.wakeup
+com.samsung.android.visionintelligence
+com.samsung.android.app.episodes
+com.samsung.android.app.music
+com.samsung.android.app.notes
+com.samsung.android.email.provider
+com.samsung.android.samsungpass
+com.samsung.android.spay
+com.samsung.android.pay.framework
+com.samsung.android.app.soundpicker
+com.samsung.android.app.simplesharing
+com.samsung.android.app.sharelive
+com.samsung.android.app.social
+com.samsung.android.game.gamehome
+com.samsung.android.game.gametools
+com.samsung.android.livestickers
+com.samsung.android.app.camera.sticker.facearavatar.preload
+com.samsung.storyservice
+com.samsung.android.themestore
+com.samsung.android.wellbeing
+com.samsung.android.weather
+com.samsung.android.app.reminder
+com.samsung.android.aremoji
+com.samsung.android.app.clipboardedge
+com.samsung.android.app.galaxyfinder
+com.samsung.android.app.ledbackcover
+com.samsung.android.service.livedrawing
+com.samsung.android.smartface
+com.samsung.android.app.smartcapture
+com.samsung.android.app.camera.sticker.stamp.preload
+com.samsung.android.app.camera.sticker.facearavatar.preload
+com.samsung.android.da.daagent
+com.samsung.android.dqagent
+com.samsung.android.drivelink.stub
+com.samsung.android.service.aircommand
+com.samsung.android.service.peoplestripe
+com.samsung.android.smartmirroring
+com.samsung.android.smartswitchassistant
+com.samsung.android.beaconmanager
+com.samsung.android.mobileservice
+com.samsung.android.app.watchmanager
+
+# === XIAOMI/MIUI BLOATWARE ===
+# Only relevant for Xiaomi devices
+com.miui.analytics
+com.miui.bugreport
+com.miui.micloudsync
+com.miui.msa.global
+com.miui.systemAdSolution
+com.xiaomi.glgm
+com.xiaomi.joyose
+com.xiaomi.mipicks
+com.xiaomi.payment
+com.xiaomi.scanner
+com.mi.global.shop
+com.mi.globalbrowser
+com.miui.yellowpage
+com.miui.hybrid
+com.miui.hybrid.accessory
+com.miui.touchassistant
+com.miui.notes
+com.miui.screenrecorder
+com.miui.compass
+com.miui.calculator
+com.miui.weather2
+com.miui.player
+com.miui.video
+com.miui.virtualsim
+
+# === HUAWEI BLOATWARE ===
+# Only relevant for Huawei devices
+com.huawei.android.launcher
+com.huawei.android.thememanager
+com.huawei.appmarket
+com.huawei.browser
+com.huawei.compass
+com.huawei.health
+com.huawei.himovie
+com.huawei.hiskytone
+com.huawei.hwid
+com.huawei.intelligent
+com.huawei.mirror
+com.huawei.music
+com.huawei.screenrecorder
+com.huawei.vassistant
+com.huawei.videoeditor
+com.huawei.wallet
+com.huawei.watch.sync
+
+# === FACEBOOK/META APPS ===
+com.facebook.katana
+com.facebook.system
+com.facebook.appmanager
+com.facebook.services
+com.instagram.android
+com.whatsapp
+
+# === MICROSOFT APPS ===
+com.microsoft.skydrive
+com.microsoft.office.word
+com.microsoft.office.excel
+com.microsoft.office.powerpoint
+com.skype.raider
+com.microsoft.office.outlook
+
+# === NETFLIX & STREAMING ===
+com.netflix.mediaclient
+com.netflix.partner.activation
+com.amazon.avod.thirdpartyclient
+
+# === MUSIC & ENTERTAINMENT ===
+com.spotify.music
+com.pandora.android
+com.iheart.android
+com.amazon.mp3
+com.audible.application
+
+# === SHOPPING & LIFESTYLE ===
+com.amazon.mShop.android.shopping
+com.booking
+com.ubercab
+com.ebay.mobile
+com.paypal.android.p2pmobile
+com.groupon
+com.yelp.android
+
+# === SOCIAL MEDIA ===
+com.twitter.android
+com.linkedin.android
+com.snapchat.android
+com.pinterest
+com.tumblr
+com.reddit.frontpage
+com.tiktok.tic
+
+# === GAMES ===
+com.king.candycrushsaga
+com.rovio.angrybirds
+com.supercell.clashofclans
+com.ea.games.r3_row
+
+# === CARRIER BLOATWARE ===
+# Verizon
+com.verizon.llkagent
+com.verizon.mips.services
+com.vzw.hss.myverizon
+
+# AT&T
+com.att.android.attsmartwifi
+com.att.myWireless
+com.synchronoss.dcs.att.r2g
+
+# T-Mobile
+com.tmobile.pr.adapt
+com.tmobile.pr.mytmobile
+com.tmobile.services.nameid
+
+# Sprint
+com.sprint.w.installer
+com.sprint.care
+
+# === MANUFACTURER UTILITIES ===
+# Often replaceable with better alternatives
+com.android.email
+com.android.gallery3d
+com.android.music
+com.android.browser
+com.android.calculator2
+com.android.calendar
+com.android.deskclock
+
+# === ADVERTISING & ANALYTICS ===
+com.android.providers.partnerbookmarks
+com.google.android.partnersetup
+com.google.android.setupwizard.partner
+
+# WARNING: DO NOT REMOVE THESE (System critical)
+# com.android.systemui
+# com.android.settings
+# com.android.phone
+# com.android.launcher3
+# com.google.android.gms
+# com.android.vending
