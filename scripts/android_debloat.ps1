@@ -85,15 +85,24 @@ function Remove-Bloatware {
     foreach ($package in $packages) {
         $package = $package.Trim()
         if ([string]::IsNullOrWhiteSpace($package)) { continue }
-        
-            
-            if ($result -match "Success") {
-                $disableResult = adb shell pm disable-user --user 0 $package 2>&1
-                if ($disableResult -match "disabled") {
-                else {
-                    Write-Error "  ✗ Failed: $package - $result"
-        else {
+        $result = adb shell pm uninstall --user 0 $package 2>&1
+        if ($result -match "Success") {
+            $disableResult = adb shell pm disable-user --user 0 $package 2>&1
+            if ($disableResult -match "disabled") {
+                Write-Success "  ✓ Disabled: $package"
+                $successCount++
+            } else {
+                Write-Error "  ✗ Failed to disable: $package - $disableResult"
+                $failCount++
+            }
+        } elseif ($result -match "not installed for") {
             Write-Host "  - Not found: $package" -ForegroundColor Gray
+            $notFoundCount++
+        } else {
+            Write-Error "  ✗ Failed: $package - $result"
+            $failCount++
+        }
+    }
     Write-Info ""
     Write-Info "Bloatware removal summary:"
     Write-Success "  Successfully removed/disabled: $successCount"
@@ -107,31 +116,26 @@ function Install-APKs {
     
     if (-not (Test-Path $APKFolder)) {
         Write-Warning "APK folder not found: $APKFolder"
-        Write-Info "Creating APK folder and example list..."
         New-Item -ItemType Directory -Path $APKFolder -Force | Out-Null
-        Create-APKList
         Write-Info "Please place your APK files in the '$APKFolder' folder and run the script again"
         return
     }
-    
+
     $apkFiles = Get-ChildItem -Path $APKFolder -Filter "*.apk"
-    
+
     if ($apkFiles.Count -eq 0) {
         Write-Warning "No APK files found in $APKFolder"
-        Create-APKList
         return
     }
-    
+
     Write-Info "Found $($apkFiles.Count) APK files to install"
-    
+
     $successCount = 0
     $failCount = 0
-    
+
     foreach ($apk in $apkFiles) {
         Write-Host "Installing: $($apk.Name)" -ForegroundColor Yellow
-        
         $result = adb install -r $apk.FullName 2>&1
-        
         if ($result -match "Success") {
             Write-Success "  ✓ Installed: $($apk.Name)"
             $successCount++
@@ -141,7 +145,7 @@ function Install-APKs {
             $failCount++
         }
     }
-    
+
     Write-Info ""
     Write-Info "APK installation summary:"
     Write-Success "  Successfully installed: $successCount"
@@ -150,125 +154,16 @@ function Install-APKs {
 
 # Create default bloatware list
 function Create-DefaultBloatwareList {
-    $bloatwareContent = @"
+    $defaultPath = "..\config\bloatware_packages.txt"
+    if (-not (Test-Path $defaultPath)) {
+        @"
 # Android Bloatware Removal List
 # Lines starting with # are comments
 # Add one package name per line
-# Common bloatware packages (customize as needed)
-
-# Google Apps (remove if you don't use)
-com.google.android.apps.books
-com.google.android.apps.magazines
-com.google.android.apps.movies
-com.google.android.apps.photos
-com.google.android.apps.plus
-com.google.android.apps.docs
-com.google.android.apps.maps
-com.google.android.music
-com.google.android.videos
-com.google.android.youtube
-com.google.android.talk
-com.google.android.apps.tachyon
-
-# Samsung Bloatware (if Samsung device)
-com.samsung.android.bixby.agent
-com.samsung.android.app.spage
-com.samsung.android.bixby.wakeup
-com.samsung.android.visionintelligence
-com.samsung.android.app.episodes
-com.samsung.android.app.music
-com.samsung.android.app.notes
-com.samsung.android.email.provider
-com.samsung.android.samsungpass
-com.samsung.android.spay
-com.samsung.android.pay.framework
-com.samsung.android.app.soundpicker
-com.samsung.android.app.simplesharing
-com.samsung.android.app.sharelive
-com.samsung.android.app.social
-com.samsung.android.game.gamehome
-com.samsung.android.game.gametools
-com.samsung.android.livestickers
-com.samsung.android.app.camera.sticker.facearavatar.preload
-com.samsung.storyservice
-com.samsung.android.themestore
-com.samsung.android.wellbeing
-
-# Facebook/Meta Apps
-com.facebook.katana
-com.facebook.system
-com.facebook.appmanager
-com.facebook.services
-com.instagram.android
-com.whatsapp
-
-# Microsoft Apps (remove if not needed)
-com.microsoft.skydrive
-com.microsoft.office.word
-com.microsoft.office.excel
-com.microsoft.office.powerpoint
-com.skype.raider
-
-# Other Common Bloatware
-com.netflix.mediaclient
-com.spotify.music
-com.amazon.mShop.android.shopping
-com.booking
-com.ubercab
-com.twitter.android
-com.linkedin.android
-com.snapchat.android
-com.pinterest
-
-
-    $bloatwareContent | Out-File -FilePath "..\config\bloatware_packages.txt" -Encoding UTF8
-    Write-Success "Created default bloatware list: ..\config\bloatware_packages.txt"
-    Write-Info "Edit this file to customize which packages to remove"
-}
-
-# Create APK installation list
-function Create-APKList {
-    $apkListContent = @"
-# Essential APKs to Install
-# Place your APK files in the 'apks' folder
-# Recommended apps:
-
-Essential Apps:
-- F-Droid (open source app store)
-- Firefox or Chrome
-- Signal (secure messaging)
-- VLC Media Player
-- 7-Zip
-- Simple Gallery Pro
-- Simple Calendar Pro
-
-Privacy/Security:
-- ProtonMail
-- ProtonVPN
-- Bitwarden
-- AdGuard
-- Tor Browser
-
-Development/Technical:
-- Termux
-- SSH/SFTP client
-- Network analyzer
-
-Productivity:
-- LibreOffice Viewer
-- Simple Notes
-- Simple File Manager
-- K-9 Mail
-
-Note: Download APKs from official sources or trusted repositories like:
-- APKMirror
-- F-Droid
-- APKPure
-- Official websites
-
-
-    $apkListContent | Out-File -FilePath "..\config\recommended_apps.txt" -Encoding UTF8
-    Write-Success "Created recommended apps list: ..\config\recommended_apps.txt"
+"@ | Out-File -FilePath $defaultPath -Encoding UTF8
+        Write-Success "Created default bloatware list: $defaultPath"
+        Write-Info "Edit this file to customize which packages to remove"
+    }
 }
 
 # Main execution
@@ -310,4 +205,3 @@ function Main {
 
 # Run the main function
 Main
-"@

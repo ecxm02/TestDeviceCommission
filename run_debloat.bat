@@ -17,8 +17,9 @@ if %errorlevel% neq 0 (
 echo Starting Android debloat script...
 echo.
 
-REM Execute the PowerShell script
-powershell -ExecutionPolicy Bypass -File "%~dp0android_debloat.ps1" %*
+
+REM Execute the PowerShell script from the scripts folder
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\android_debloat.ps1" %*
 
 echo.
 echo Script execution completed.
