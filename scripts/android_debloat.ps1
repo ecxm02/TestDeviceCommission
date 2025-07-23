@@ -1,8 +1,8 @@
 # Android Device Commission Script
 # This script removes bloatware and sideloads essential APKs
-
 param(
     [switch]$SkipBloatwareRemoval,
+ 
     [switch]$SkipAPKInstall,
     [string]$APKFolder = "..\apks",
     [switch]$Force
@@ -71,7 +71,7 @@ function Remove-Bloatware {
     if (-not (Test-Path $bloatwareFile)) {
         Write-Warning "Bloatware list file not found: $bloatwareFile"
         Write-Info "Creating default bloatware list..."
-        Create-DefaultBloatwareList
+        New-DefaultBloatwareList
     }
     
     $packages = Get-Content $bloatwareFile | Where-Object { $_ -and -not $_.StartsWith('#') }
@@ -152,8 +152,7 @@ function Install-APKs {
     Write-Error "  Failed: $failCount"
 }
 
-# Create default bloatware list
-function Create-DefaultBloatwareList {
+function New-DefaultBloatwareList {
     $defaultPath = "..\config\bloatware_packages.txt"
     if (-not (Test-Path $defaultPath)) {
         @"
