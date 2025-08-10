@@ -1,206 +1,114 @@
-# Android Device Commission Script
-# This script removes bloatware and sideloads essential APKs
+# Android Debloat and APK Sideload Script (Standalone)
+# This script removes bloatware and installs APKs from a folder, no external dependencies
+
 param(
     [switch]$SkipBloatwareRemoval,
- 
     [switch]$SkipAPKInstall,
-    [string]$APKFolder = "..\apks",
+[string]$APKFolder = "..\apks",
     [switch]$Force
 )
 
-# Color functions for better output
-function Write-Success { param($Message) Write-Host $Message -ForegroundColor Green }
-function Write-Warning { param($Message) Write-Host $Message -ForegroundColor Yellow }
-function Write-Error { param($Message) Write-Host $Message -ForegroundColor Red }
-function Write-Info { param($Message) Write-Host $Message -ForegroundColor Cyan }
+function Write-Color($Message, $Color) {
+    Write-Host $Message -ForegroundColor $Color
+}
 
-# Check if ADB is available
-function Test-ADBConnection {
-    Write-Info "Checking ADB connection..."
-    
-    try {
-        $devices = adb devices 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "ADB is not installed or not in PATH"
-            Write-Info "Please install Android SDK Platform Tools and add to PATH"
-            exit 1
-        }
-        
-        $deviceLines = $devices | Select-String -Pattern "device$"
-        if ($deviceLines.Count -eq 0) {
-            Write-Error "No Android device connected or device not authorized"
-            Write-Info "Please:"
-            Write-Info "1. Connect your Android device via USB"
-            Write-Info "2. Enable USB Debugging in Developer Options"
-            Write-Info "3. Authorize the computer when prompted"
-            exit 1
-        }
-        
-        Write-Success "Found $($deviceLines.Count) connected device(s)"
-        return $true
-    }
-    catch {
-        Write-Error "Failed to check ADB connection: $($_.Exception.Message)"
+function Test-ADB {
+    Write-Color "Checking ADB connection..." Cyan
+    $adb = Get-Command adb -ErrorAction SilentlyContinue
+    if (-not $adb) {
+        Write-Color "ADB is not installed or not in PATH." Red
         exit 1
     }
-}
-
-# Enable Developer Options and USB Debugging reminder
-function Show-DeveloperOptionsReminder {
-    Write-Warning "IMPORTANT: Before running this script, ensure:"
-    Write-Info "1. Developer Options are enabled (Settings > About Phone > tap Build Number 7 times)"
-    Write-Info "2. USB Debugging is enabled (Settings > Developer Options > USB Debugging)"
-    Write-Info "3. Device is connected via USB and authorized"
-    Write-Info ""
-    
-    if (-not $Force) {
-        $response = Read-Host "Press Enter to continue or 'q' to quit"
-        if ($response -eq 'q') {
-            Write-Info "Script cancelled by user"
-            exit 0
-        }
+    $devices = adb devices 2>&1
+    $deviceLines = $devices -split "`n" | Where-Object { $_ -match "device\s*$" -and $_ -notmatch "List of devices" }
+    if ($deviceLines.Count -eq 0) {
+        Write-Color "No Android device connected or not authorized." Red
+        exit 1
     }
+    Write-Color "ADB is available and device is connected." Green
 }
 
-# Function to uninstall bloatware
+function Get-BloatwareList {
+    $defaultList = @(
+        "com.facebook.katana",
+        "com.facebook.appmanager",
+        "com.facebook.services",
+        "com.facebook.system",
+        "com.amazon.kindle",
+        "com.amazon.appmanager",
+        "com.netflix.mediaclient"
+    )
+    $configPath = "..\config\bloatware_packages.txt"
+    if (-not (Test-Path $configPath)) {
+        if (-not (Test-Path "..\config")) {
+            New-Item -ItemType Directory -Path "..\config" -Force | Out-Null
+        }
+        $defaultList | Set-Content $configPath
+        Write-Color "Created default bloatware list at $configPath" Green
+        Write-Color "Edit this file to customize which packages to remove" Cyan
+    }
+    Get-Content $configPath | Where-Object { $_ -and -not $_.StartsWith('#') }
+}
+
 function Remove-Bloatware {
-    Write-Info "Starting bloatware removal..."
-    
-    # Load bloatware list
-    $bloatwareFile = "..\config\bloatware_packages.txt"
-    if (-not (Test-Path $bloatwareFile)) {
-        Write-Warning "Bloatware list file not found: $bloatwareFile"
-        Write-Info "Creating default bloatware list..."
-        New-DefaultBloatwareList
-    }
-    
-    $packages = Get-Content $bloatwareFile | Where-Object { $_ -and -not $_.StartsWith('#') }
-    
-    Write-Info "Found $($packages.Count) packages to remove"
-    
-    $successCount = 0
-    $failCount = 0
-    $notFoundCount = 0
-    
-    foreach ($package in $packages) {
-        $package = $package.Trim()
-        if ([string]::IsNullOrWhiteSpace($package)) { continue }
-        $result = adb shell pm uninstall --user 0 $package 2>&1
+    Write-Color "Starting bloatware removal..." Cyan
+    $packages = Get-BloatwareList
+    $success = 0; $fail = 0; $notfound = 0
+    foreach ($pkg in $packages) {
+        $pkg = $pkg.Trim()
+        if ([string]::IsNullOrWhiteSpace($pkg)) { continue }
+        $result = adb shell pm uninstall --user 0 $pkg 2>&1
         if ($result -match "Success") {
-            $disableResult = adb shell pm disable-user --user 0 $package 2>&1
-            if ($disableResult -match "disabled") {
-                Write-Success "  ✓ Disabled: $package"
-                $successCount++
-            } else {
-                Write-Error "  ✗ Failed to disable: $package - $disableResult"
-                $failCount++
-            }
+            Write-Color ("  [OK] Removed: {0}" -f $pkg) Green
+            $success++
         } elseif ($result -match "not installed for") {
-            Write-Host "  - Not found: $package" -ForegroundColor Gray
-            $notFoundCount++
+            Write-Color ("  - Not found: {0}" -f $pkg) Yellow
+            $notfound++
         } else {
-            Write-Error "  ✗ Failed: $package - $result"
-            $failCount++
+            Write-Color ("  [X] Failed: {0} - {1}" -f $pkg, $result) Red
+            $fail++
         }
     }
-    Write-Info ""
-    Write-Info "Bloatware removal summary:"
-    Write-Success "  Successfully removed/disabled: $successCount"
-    Write-Error "  Failed: $failCount"
-    Write-Host "  Not found: $notFoundCount" -ForegroundColor Gray
+    Write-Color "Summary: $success removed, $fail failed, $notfound not found" Cyan
 }
 
-# Function to install APKs
 function Install-APKs {
-    Write-Info "Starting APK installation..."
-    
+    Write-Color "Starting APK installation..." Cyan
     if (-not (Test-Path $APKFolder)) {
-        Write-Warning "APK folder not found: $APKFolder"
         New-Item -ItemType Directory -Path $APKFolder -Force | Out-Null
-        Write-Info "Please place your APK files in the '$APKFolder' folder and run the script again"
+        Write-Color "APK folder created at $APKFolder. Add APKs and rerun." Yellow
         return
     }
-
-    $apkFiles = Get-ChildItem -Path $APKFolder -Filter "*.apk"
-
-    if ($apkFiles.Count -eq 0) {
-        Write-Warning "No APK files found in $APKFolder"
+    $apks = Get-ChildItem -Path $APKFolder -Filter "*.apk"
+    if ($apks.Count -eq 0) {
+        Write-Color "No APK files found in $APKFolder" Yellow
         return
     }
-
-    Write-Info "Found $($apkFiles.Count) APK files to install"
-
-    $successCount = 0
-    $failCount = 0
-
-    foreach ($apk in $apkFiles) {
-        Write-Host "Installing: $($apk.Name)" -ForegroundColor Yellow
+    $success = 0; $fail = 0
+    foreach ($apk in $apks) {
+        Write-Color ("Installing: {0}" -f $apk.Name) Yellow
         $result = adb install -r $apk.FullName 2>&1
         if ($result -match "Success") {
-            Write-Success "  ✓ Installed: $($apk.Name)"
-            $successCount++
-        }
-        else {
-            Write-Error "  ✗ Failed: $($apk.Name) - $result"
-            $failCount++
-        }
-    }
-
-    Write-Info ""
-    Write-Info "APK installation summary:"
-    Write-Success "  Successfully installed: $successCount"
-    Write-Error "  Failed: $failCount"
-}
-
-function New-DefaultBloatwareList {
-    $defaultPath = "..\config\bloatware_packages.txt"
-    if (-not (Test-Path $defaultPath)) {
-        @"
-# Android Bloatware Removal List
-# Lines starting with # are comments
-# Add one package name per line
-"@ | Out-File -FilePath $defaultPath -Encoding UTF8
-        Write-Success "Created default bloatware list: $defaultPath"
-        Write-Info "Edit this file to customize which packages to remove"
-    }
-}
-
-# Main execution
-function Main {
-    Write-Info "=== Android Device Commission Script ==="
-    Write-Info "This script will debloat your Android device and install essential APKs"
-    Write-Info ""
-    
-    Show-DeveloperOptionsReminder
-    Test-ADBConnection
-    
-    # Get device info
-    $deviceInfo = adb shell getprop ro.product.model 2>&1
-    $androidVersion = adb shell getprop ro.build.version.release 2>&1
-    Write-Info "Device: $deviceInfo (Android $androidVersion)"
-    Write-Info ""
-    
-    if (-not $SkipBloatwareRemoval) {
-        Remove-Bloatware
-        Write-Info ""
-    }
-    
-    if (-not $SkipAPKInstall) {
-        Install-APKs
-        Write-Info ""
-    }
-    
-    Write-Success "Device commissioning completed!"
-    Write-Info "You may want to reboot your device to ensure all changes take effect"
-    
-    if (-not $Force) {
-        $reboot = Read-Host "Reboot device now? (y/N)"
-        if ($reboot -eq 'y' -or $reboot -eq 'Y') {
-            Write-Info "Rebooting device..."
-            adb reboot
+            Write-Color ("  [OK] Installed: {0}" -f $apk.Name) Green
+            $success++
+        } else {
+            Write-Color ("  [X] Failed: {0} - {1}" -f $apk.Name, $result) Red
+            $fail++
         }
     }
+    Write-Color "Summary: $success installed, $fail failed" Cyan
 }
 
-# Run the main function
-Main
+# Main
+Write-Color "=== Android Debloat & APK Sideload ===" Cyan
+Test-ADB
+if (-not $SkipBloatwareRemoval) { Remove-Bloatware }
+if (-not $SkipAPKInstall) { Install-APKs }
+Write-Color "All done! You may want to reboot your device." Green
+if (-not $Force) {
+    $reboot = Read-Host "Reboot device now? (y/N)"
+    if ($reboot -eq 'y' -or $reboot -eq 'Y') {
+        Write-Color "Rebooting device..." Cyan
+        adb reboot
+    }
+}
